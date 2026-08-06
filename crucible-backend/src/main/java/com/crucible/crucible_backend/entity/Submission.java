@@ -1,6 +1,7 @@
 package com.crucible.crucible_backend.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "submissions")
@@ -40,6 +41,13 @@ public class Submission {
     @Column(nullable = false)
     private boolean isWinner = false;
 
+    // --- Timestamps for Escrow & Audit Trail ---
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
     // --- Constructors ---
     public Submission() {}
 
@@ -47,6 +55,12 @@ public class Submission {
         this.gig = gig;
         this.freelancer = freelancer;
         this.pitch = pitch;
+    }
+
+    // --- Lifecycle Callbacks ---
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     // --- Getters and Setters ---
@@ -59,11 +73,15 @@ public class Submission {
     public String getPitch() { return pitch; }
     public void setPitch(String pitch) { this.pitch = pitch; }
     public boolean isShortlisted() { return isShortlisted; }
-    public void setShortlisted(boolean shortlisted) { isShortlisted = shortlisted; }
+    public void setShortlisted(boolean shortlisted) { this.isShortlisted = shortlisted; }
     public String getDeliverableReference() { return deliverableReference; }
     public void setDeliverableReference(String deliverableReference) { this.deliverableReference = deliverableReference; }
     public Double getAutomatedScore() { return automatedScore; }
     public void setAutomatedScore(Double automatedScore) { this.automatedScore = automatedScore; }
     public boolean isWinner() { return isWinner; }
-    public void setWinner(boolean winner) { isWinner = winner; }
+    public void setWinner(boolean winner) { this.isWinner = winner; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }
