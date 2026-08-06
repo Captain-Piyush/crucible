@@ -1,0 +1,70 @@
+package com.crucible.crucible_backend.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "users")
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    // A simple role string for now (e.g., "FREELANCER", "POSTER")
+    // We can upgrade this to an Enum later if needed.
+    @Column(nullable = false)
+    private String role;
+
+    // --- Constructors ---
+
+    // Hibernate requires a default, no-argument constructor to work its magic
+    public User() {
+    }
+
+    public User(String name, String email, String role) {
+        this.name = name;
+        this.email = email;
+        this.role = role;
+    }
+
+    // --- Getters and Setters ---
+    // (In IntelliJ, you can auto-generate these by pressing Alt + Insert -> Getters and Setters)
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+}
