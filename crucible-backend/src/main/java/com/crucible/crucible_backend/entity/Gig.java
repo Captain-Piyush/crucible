@@ -80,6 +80,11 @@ public class Gig {
         this.budget = budget;
     }
 
+    // Safe alias for financial services expecting getTotalBudget()
+    public BigDecimal getTotalBudget() {
+        return budget;
+    }
+
     public Project getProject() {
         return project;
     }
