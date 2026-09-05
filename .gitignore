@@ -1,1 +1,10 @@
 .idea/
+# Node & Hardhat dependencies
+node_modules/
+cache/
+artifacts/
+ignition/deployments/
+typechain-types/
+coverage/
+coverage.json
+.env

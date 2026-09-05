@@ -1,0 +1,49 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_24-a3c292a4a32cd8c026fec6f54b28eb8a0af839ef",
+  "solcVersion": "0.8.24",
+  "solcLongVersion": "0.8.24+commit.e11b9ed9",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.12.0"
+  },
+  "userSourceNameMap": {
+    "contracts/TrustPay.sol": "project/contracts/TrustPay.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "shanghai",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/TrustPay.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.24;\r\n\r\n/**\r\n * @title EscrowRecord\r\n * @dev Represents a single gig's escrow state.\r\n * This is an AUDIT TRAIL contract, not a fiat custodian.\r\n */\r\ncontract EscrowRecord {\r\n    enum State { Created, Funded, Released, Refunded, Disputed }\r\n\r\n    State public currentState;\r\n    address public backendSigner;\r\n    uint256 public gigId;\r\n    uint256 public amount; // Represents fiat value for audit purposes\r\n\r\n    event StateChanged(State newState, uint256 timestamp);\r\n\r\n    modifier onlyBackend() {\r\n        require(msg.sender == backendSigner, \"Only backend can update state\");\r\n        _;\r\n    }\r\n\r\n    constructor(address _backendSigner, uint256 _gigId, uint256 _amount) {\r\n        backendSigner = _backendSigner;\r\n        gigId = _gigId;\r\n        amount = _amount;\r\n        currentState = State.Created;\r\n    }\r\n\r\n    function fund() external onlyBackend {\r\n        require(currentState == State.Created, \"Invalid state transition\");\r\n        currentState = State.Funded;\r\n        emit StateChanged(currentState, block.timestamp);\r\n    }\r\n\r\n    function release() external onlyBackend {\r\n        require(currentState == State.Funded, \"Invalid state transition\");\r\n        currentState = State.Released;\r\n        emit StateChanged(currentState, block.timestamp);\r\n    }\r\n\r\n    function refund() external onlyBackend {\r\n        require(currentState == State.Funded || currentState == State.Created, \"Invalid state transition\");\r\n        currentState = State.Refunded;\r\n        emit StateChanged(currentState, block.timestamp);\r\n    }\r\n\r\n    function dispute() external onlyBackend {\r\n        require(currentState == State.Funded, \"Invalid state transition\");\r\n        currentState = State.Disputed;\r\n        emit StateChanged(currentState, block.timestamp);\r\n    }\r\n}\r\n\r\n/**\r\n * @title EscrowFactory\r\n * @dev Deploys individual EscrowRecords to isolate per-gig lifecycle and state.\r\n */\r\ncontract EscrowFactory {\r\n    address public backendSigner;\r\n    mapping(uint256 => address) public gigEscrows;\r\n\r\n    event EscrowCreated(uint256 indexed gigId, address escrowAddress);\r\n\r\n    constructor() {\r\n        // The wallet that deploys this contract (your Spring Boot backend wallet)\r\n        // becomes the authorized signer.\r\n        backendSigner = msg.sender;\r\n    }\r\n\r\n    function createEscrow(uint256 gigId, uint256 amount) external {\r\n        require(msg.sender == backendSigner, \"Only backend can create escrows\");\r\n        require(gigEscrows[gigId] == address(0), \"Escrow already exists for this gig\");\r\n\r\n        // Deploy a new independent EscrowRecord contract\r\n        EscrowRecord newEscrow = new EscrowRecord(backendSigner, gigId, amount);\r\n        gigEscrows[gigId] = address(newEscrow);\r\n\r\n        emit EscrowCreated(gigId, address(newEscrow));\r\n    }\r\n}"
+      }
+    }
+  }
+}
