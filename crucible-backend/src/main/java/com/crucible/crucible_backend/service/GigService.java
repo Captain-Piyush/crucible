@@ -6,6 +6,7 @@ import com.crucible.crucible_backend.entity.Gig;
 import com.crucible.crucible_backend.entity.Project;
 import com.crucible.crucible_backend.repository.GigRepository;
 import com.crucible.crucible_backend.repository.ProjectRepository;
+import com.crucible.escrow.service.EscrowService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +17,12 @@ public class GigService {
 
     private final GigRepository gigRepository;
     private final ProjectRepository projectRepository;
+    private final EscrowService escrowService;
 
-    public GigService(GigRepository gigRepository, ProjectRepository projectRepository) {
+    public GigService(GigRepository gigRepository, ProjectRepository projectRepository, EscrowService escrowService) {
         this.gigRepository = gigRepository;
         this.projectRepository = projectRepository;
+        this.escrowService = escrowService;
     }
 
     @Transactional
@@ -35,7 +38,7 @@ public class GigService {
             finalBudget = calculateDefaultBudget(project.getTotalBudget(), request.getGigType());
         }
 
-        // 3. Map to Entity and save
+        // 3. Map to Entity and save FIRST to generate the relational ID
         Gig gig = new Gig();
         gig.setTitle(request.getTitle());
         gig.setDescription(request.getDescription());
@@ -45,7 +48,18 @@ public class GigService {
 
         Gig savedGig = gigRepository.save(gig);
 
-        // 4. Map back to Response DTO
+        // 4. Trigger Web3j Oracle to spawn the smart contract
+        System.out.println("Triggering blockchain deployment for Gig ID: " + savedGig.getId());
+        String escrowAddress = escrowService.createEscrowRecord(
+                savedGig.getId(),
+                savedGig.getBudgetInCents()
+        );
+
+        // 5. Link the immutable contract address back to the Postgres row
+        savedGig.setEscrowContractAddress(escrowAddress);
+        savedGig = gigRepository.save(savedGig);
+
+        // 6. Map back to Response DTO
         GigResponse response = new GigResponse();
         response.setId(savedGig.getId());
         response.setTitle(savedGig.getTitle());
@@ -54,16 +68,18 @@ public class GigService {
         response.setBudget(savedGig.getBudget());
         response.setProjectId(project.getId());
 
+        // Note: Add this field to your GigResponse DTO if you want to return it to the frontend!
+        // response.setEscrowContractAddress(savedGig.getEscrowContractAddress());
+
         return response;
     }
 
-    // A private helper method specifically for our business logic
     private BigDecimal calculateDefaultBudget(BigDecimal totalProjectBudget, com.crucible.crucible_backend.entity.GigType type) {
         double multiplier = switch (type) {
-            case BACKEND_API -> 0.40;  // 40%
-            case FRONTEND -> 0.35;     // 35%
-            case DATABASE -> 0.25;     // 25%
-            default -> 0.20;           // Standard fallback
+            case BACKEND_API -> 0.40;
+            case FRONTEND -> 0.35;
+            case DATABASE -> 0.25;
+            default -> 0.20;
         };
 
         return totalProjectBudget.multiply(BigDecimal.valueOf(multiplier));

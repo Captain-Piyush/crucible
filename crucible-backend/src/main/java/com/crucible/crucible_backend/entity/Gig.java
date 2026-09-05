@@ -2,6 +2,7 @@ package com.crucible.crucible_backend.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 @Entity
 @Table(name = "gigs")
@@ -26,6 +27,10 @@ public class Gig {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
+
+    // --- Blockchain Integration ---
+    @Column(name = "escrow_contract_address", unique = true)
+    private String escrowContractAddress;
 
     // --- Constructors ---
     public Gig() {
@@ -91,5 +96,24 @@ public class Gig {
 
     public void setProject(Project project) {
         this.project = project;
+    }
+
+    public String getEscrowContractAddress() {
+        return escrowContractAddress;
+    }
+
+    public void setEscrowContractAddress(String escrowContractAddress) {
+        this.escrowContractAddress = escrowContractAddress;
+    }
+
+    /**
+     * Converts the BigDecimal budget to BigInteger cents.
+     * Solidity uint256 requires integer math to prevent floating-point rounding errors.
+     */
+    public BigInteger getBudgetInCents() {
+        if (this.budget == null) {
+            return BigInteger.ZERO;
+        }
+        return this.budget.multiply(new BigDecimal("100")).toBigInteger();
     }
 }
