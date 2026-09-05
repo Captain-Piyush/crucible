@@ -8,3 +8,5 @@ typechain-types/
 coverage/
 coverage.json
 .env
+
+crucible-backend/web3j.zip
