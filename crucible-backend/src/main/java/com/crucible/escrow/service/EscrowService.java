@@ -81,4 +81,24 @@ public class EscrowService {
             throw new RuntimeException("Failed to release EscrowRecord", e);
         }
     }
+
+    public String refundEscrow(String escrowRecordAddress) {
+        try {
+            EscrowRecord record = EscrowRecord.load(escrowRecordAddress, web3j, credentials, gasProvider);
+            TransactionReceipt receipt = record.refund().send();
+            return receipt.getTransactionHash();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to refund EscrowRecord", e);
+        }
+    }
+
+    public String disputeEscrow(String escrowRecordAddress) {
+        try {
+            EscrowRecord record = EscrowRecord.load(escrowRecordAddress, web3j, credentials, gasProvider);
+            TransactionReceipt receipt = record.dispute().send();
+            return receipt.getTransactionHash();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to dispute EscrowRecord", e);
+        }
+    }
 }

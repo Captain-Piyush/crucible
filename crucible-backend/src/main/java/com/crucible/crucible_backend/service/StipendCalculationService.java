@@ -3,6 +3,7 @@ package com.crucible.crucible_backend.service;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,23 +28,44 @@ public class StipendCalculationService {
             BigDecimal platformRevenue,
             BigDecimal totalStipendPool,
             List<BigDecimal> runnerUpStipends
-    ) {}
+    ) {
+        // --- Web3j Bridge Methods ---
+        // Converts the Web2 BigDecimal dollars into Web3 BigInteger cents for Solidity uint256
+        public BigInteger getWinnerPayoutInCents() {
+            return winnerPayout.multiply(new BigDecimal("100")).toBigInteger();
+        }
+
+        public BigInteger getPlatformRevenueInCents() {
+            return platformRevenue.multiply(new BigDecimal("100")).toBigInteger();
+        }
+
+        public List<BigInteger> getRunnerUpStipendsInCents() {
+            return runnerUpStipends.stream()
+                    .map(stipend -> stipend.multiply(new BigDecimal("100")).toBigInteger())
+                    .toList();
+        }
+    }
 
     /**
      * Calculates the deterministic payout split for a Gig based on the total budget and number of runners-up.
      */
     public FinancialLedger calculatePayouts(BigDecimal totalGigPayment, int numberOfRunnersUp) {
 
-        // 1. Calculate the total platform fee (e.g., $20 out of a $100 payment)
+        // Edge Case Defense: Prevent math errors on empty budgets
+        if (totalGigPayment == null || totalGigPayment.compareTo(BigDecimal.ZERO) <= 0) {
+            return new FinancialLedger(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of());
+        }
+
+        // 1. Calculate the total platform fee
         BigDecimal totalPlatformFee = totalGigPayment.multiply(PLATFORM_FEE_PERCENTAGE);
 
-        // 2. The winner gets the payment minus the total fee (e.g., $80)
+        // 2. The winner gets the payment minus the total fee
         BigDecimal winnerPayout = totalGigPayment.subtract(totalPlatformFee);
 
-        // 3. Carve the stipend pool out of the platform fee (e.g., $10)
+        // 3. Carve the stipend pool out of the platform fee
         BigDecimal stipendPool = totalPlatformFee.multiply(STIPEND_POOL_PERCENTAGE);
 
-        // 4. The remainder of the fee is actual platform revenue (e.g., $10)
+        // 4. The remainder of the fee is actual platform revenue
         BigDecimal platformRevenue = totalPlatformFee.subtract(stipendPool);
 
         // 5. Calculate exact stipends for the non-winning finalists based on rank

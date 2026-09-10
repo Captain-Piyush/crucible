@@ -10,3 +10,4 @@ coverage.json
 .env
 
 crucible-backend/web3j.zip
+application-local.properties

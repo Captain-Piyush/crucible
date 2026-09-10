@@ -35,7 +35,7 @@ public class CrucibleBackendApplication {
 
             // 2. Initialize the Blockchain Deployment
             System.out.println("--- BLOCKCHAIN READY: Attempting to connect to Hardhat Node... ---");
-            escrowService.deployEscrowFactory();
+           // escrowService.deployEscrowFactory();
 
             System.out.println("==================================");
         };

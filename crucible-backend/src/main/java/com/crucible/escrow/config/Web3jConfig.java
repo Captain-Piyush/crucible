@@ -10,7 +10,7 @@ import org.web3j.protocol.http.HttpService;
 @Configuration
 public class Web3jConfig {
 
-    @Value("${blockchain.node.url}")
+    @Value("${blockchain.node.url:https://rpc-amoy.polygon.technology/}")
     private String nodeUrl;
 
     @Value("${blockchain.wallet.private-key}")

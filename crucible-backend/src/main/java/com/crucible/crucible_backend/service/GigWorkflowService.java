@@ -4,6 +4,7 @@ import com.crucible.crucible_backend.entity.Gig;
 import com.crucible.crucible_backend.entity.Submission;
 import com.crucible.crucible_backend.repository.GigRepository;
 import com.crucible.crucible_backend.repository.SubmissionRepository;
+import com.crucible.escrow.service.EscrowService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,13 +17,16 @@ public class GigWorkflowService {
     private final SubmissionRepository submissionRepository;
     private final GigRepository gigRepository;
     private final StipendCalculationService stipendCalculationService;
+    private final EscrowService escrowService;
 
     public GigWorkflowService(SubmissionRepository submissionRepository,
                               GigRepository gigRepository,
-                              StipendCalculationService stipendCalculationService) {
+                              StipendCalculationService stipendCalculationService,
+                              EscrowService escrowService) {
         this.submissionRepository = submissionRepository;
         this.gigRepository = gigRepository;
         this.stipendCalculationService = stipendCalculationService;
+        this.escrowService = escrowService;
     }
 
     /**
@@ -35,7 +39,6 @@ public class GigWorkflowService {
 
         Gig gig = submission.getGig();
 
-        // Count existing shortlisted submissions for this gig
         long currentShortlistedCount = submissionRepository.countByGigIdAndIsShortlistedTrue(gig.getId());
 
         if (!submission.isShortlisted() && currentShortlistedCount >= 3) {
@@ -47,14 +50,14 @@ public class GigWorkflowService {
     }
 
     /**
-     * Stage 2 & Settlement: Selects the winner, allocates runners-up, and computes the FinancialLedger.
+     * Stage 2 & Settlement: Selects the winner, allocates runners-up, unlocks blockchain funds, and computes the FinancialLedger.
      */
     @Transactional
     public StipendCalculationService.FinancialLedger settleGig(Long gigId, Long winnerSubmissionId, List<Long> runnerUpSubmissionIds) {
         Gig gig = gigRepository.findById(gigId)
                 .orElseThrow(() -> new IllegalArgumentException("Gig not found with ID: " + gigId));
 
-        // Validate and mark the winner
+        // 1. Validate and mark the winner
         Submission winnerSubmission = submissionRepository.findById(winnerSubmissionId)
                 .orElseThrow(() -> new IllegalArgumentException("Winner submission not found."));
 
@@ -64,7 +67,7 @@ public class GigWorkflowService {
         winnerSubmission.setWinner(true);
         submissionRepository.save(winnerSubmission);
 
-        // Validate and mark runners-up
+        // 2. Validate and mark runners-up
         if (runnerUpSubmissionIds != null && !runnerUpSubmissionIds.isEmpty()) {
             if (runnerUpSubmissionIds.size() > 3) {
                 throw new IllegalArgumentException("Cannot have more than 3 runners-up.");
@@ -79,11 +82,16 @@ public class GigWorkflowService {
         }
 
         int numberOfRunnersUp = (runnerUpSubmissionIds != null) ? runnerUpSubmissionIds.size() : 0;
-
-        // Compute the payout ledger using our financial engine
-        // Assuming Gig has a getTotalBudget() BigDecimal field
         BigDecimal totalBudget = gig.getTotalBudget() != null ? gig.getTotalBudget() : BigDecimal.ZERO;
 
+        // 3. Trigger Blockchain Payout (The Oracle Bridge)
+        if (gig.getEscrowContractAddress() != null) {
+            System.out.println("Executing on-chain settlement for Gig ID: " + gigId + " at contract: " + gig.getEscrowContractAddress());
+            // This assumes your EscrowService has a releaseEscrow(address) method mapped to your Smart Contract
+            escrowService.releaseEscrow(gig.getEscrowContractAddress());
+        }
+
+        // 4. Compute and return the final payout ledger
         return stipendCalculationService.calculatePayouts(totalBudget, numberOfRunnersUp);
     }
 }

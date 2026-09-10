@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/projects")
+@CrossOrigin(origins = "http://localhost:5173")
 public class ProjectController {
 
     private final ProjectService projectService;
@@ -18,7 +19,6 @@ public class ProjectController {
         this.projectService = projectService;
     }
 
-    // The @Valid annotation triggers the @NotBlank and @NotNull checks inside our DTO
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@Valid @RequestBody ProjectCreateRequest request) {
         ProjectResponse createdProject = projectService.createProject(request);
