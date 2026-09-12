@@ -1,5 +1,6 @@
 package com.crucible.escrow.service;
 
+import com.crucible.crucible_backend.service.StipendCalculationService;
 import com.crucible.escrow.contract.EscrowFactory;
 import com.crucible.escrow.contract.EscrowRecord;
 import org.springframework.stereotype.Service;
@@ -8,6 +9,7 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.gas.DefaultGasProvider;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 @Service
@@ -17,7 +19,6 @@ public class EscrowService {
     private final Credentials credentials;
     private final DefaultGasProvider gasProvider = new DefaultGasProvider();
 
-    // Cache the deployed factory address
     private String factoryAddress;
 
     public EscrowService(Web3j web3j, Credentials credentials) {
@@ -28,10 +29,7 @@ public class EscrowService {
     public String deployEscrowFactory() {
         try {
             System.out.println("Deploying EscrowFactory to the blockchain...");
-            EscrowFactory factory = EscrowFactory.deploy(
-                    web3j, credentials, gasProvider
-            ).send();
-
+            EscrowFactory factory = EscrowFactory.deploy(web3j, credentials, gasProvider).send();
             this.factoryAddress = factory.getContractAddress();
             System.out.println("Successfully deployed at address: " + this.factoryAddress);
             return this.factoryAddress;
@@ -45,18 +43,11 @@ public class EscrowService {
             if (this.factoryAddress == null) {
                 throw new IllegalStateException("EscrowFactory address is not set. Deploy factory first.");
             }
-
             EscrowFactory factory = EscrowFactory.load(this.factoryAddress, web3j, credentials, gasProvider);
             BigInteger contractGigId = BigInteger.valueOf(gigId);
 
-            // 1. Submit on-chain transaction
             TransactionReceipt receipt = factory.createEscrow(contractGigId, fiatAmountCents).send();
-            System.out.println("Escrow created in Tx: " + receipt.getTransactionHash());
-
-            // 2. Query the mapping getter to find the newly spawned contract address
-            String recordAddress = factory.gigEscrows(contractGigId).send();
-            System.out.println("EscrowRecord contract spawned at: " + recordAddress);
-            return recordAddress;
+            return factory.gigEscrows(contractGigId).send();
         } catch (Exception e) {
             throw new RuntimeException("Failed to create EscrowRecord", e);
         }
@@ -72,13 +63,20 @@ public class EscrowService {
         }
     }
 
-    public String releaseEscrow(String escrowRecordAddress) {
+    public String releaseEscrow(String escrowRecordAddress, StipendCalculationService.FinancialLedger ledger) {
         try {
             EscrowRecord record = EscrowRecord.load(escrowRecordAddress, web3j, credentials, gasProvider);
-            TransactionReceipt receipt = record.release().send();
+
+            // Using your built-in Web3j Bridge Methods!
+            BigInteger winnerCents = ledger.getWinnerPayoutInCents();
+            BigInteger platformRevenueCents = ledger.getPlatformRevenueInCents();
+            BigInteger stipendPoolCents = ledger.totalStipendPool().multiply(new BigDecimal("100")).toBigInteger();
+
+            // Line 76 WILL STAY RED until we update the Solidity contract wrapper
+            TransactionReceipt receipt = record.release(winnerCents, platformRevenueCents, stipendPoolCents).send();
             return receipt.getTransactionHash();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to release EscrowRecord", e);
+            throw new RuntimeException("Failed to release EscrowRecord with stipend ledger", e);
         }
     }
 

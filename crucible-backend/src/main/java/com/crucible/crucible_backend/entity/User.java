@@ -16,25 +16,23 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    // Stores the BCrypt hashed password, never the plain text
+    @Column(nullable = false)
+    private String passwordHash;
+
     // A simple role string for now (e.g., "FREELANCER", "POSTER")
-    // We can upgrade this to an Enum later if needed.
     @Column(nullable = false)
     private String role;
 
-    // --- Constructors ---
-
-    // Hibernate requires a default, no-argument constructor to work its magic
     public User() {
     }
 
-    public User(String name, String email, String role) {
+    public User(String name, String email, String passwordHash, String role) {
         this.name = name;
         this.email = email;
+        this.passwordHash = passwordHash;
         this.role = role;
     }
-
-    // --- Getters and Setters ---
-    // (In IntelliJ, you can auto-generate these by pressing Alt + Insert -> Getters and Setters)
 
     public Long getId() {
         return id;
@@ -58,6 +56,14 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     public String getRole() {

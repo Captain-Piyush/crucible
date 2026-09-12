@@ -6,6 +6,7 @@ import com.crucible.crucible_backend.strategy.JudgingStrategy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SubmissionScoringService {
@@ -28,18 +29,24 @@ public class SubmissionScoringService {
             throw new IllegalStateException("Cannot score a Stage 1 submission. No deliverable reference found.");
         }
 
-        // 2. Dynamically extract the Gig Type based on your relationship mapping
-        // Note: Adjust .name() or .toString() depending on if your GigType is an Enum or String
         String gigType = submission.getGig().getType().name();
 
-        // 3. Find the right strategy
-        JudgingStrategy strategy = strategies.stream()
+        // 3. Find the right strategy, wrapped in an Optional
+        Optional<JudgingStrategy> strategyOpt = strategies.stream()
                 .filter(s -> s.supports(gigType))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No judging strategy found for type: " + gigType));
+                .findFirst();
+
+        // Graceful fallback for FRONTEND, DATABASE, AI_AGENT
+        if (strategyOpt.isEmpty()) {
+            System.out.println("No automated strategy for gig type: " + gigType + ". Manual review required for Submission " + submissionId);
+            // Null indicates pending manual review
+            submission.setAutomatedScore(null);
+            submissionRepository.save(submission);
+            return;
+        }
 
         // 4. Spin up Docker and get the Double score
-        Double score = strategy.evaluate(submission.getDeliverableReference());
+        Double score = strategyOpt.get().evaluate(submission.getDeliverableReference());
 
         // 5. Save back to your DB
         submission.setAutomatedScore(score);

@@ -29,15 +29,6 @@ import org.web3j.tx.Contract;
 import org.web3j.tx.TransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;
 
-/**
- * <p>Auto generated code.
- * <p><strong>Do not modify!</strong>
- * <p>Please use the <a href="https://docs.web3j.io/command_line.html">web3j command line tools</a>,
- * or the org.web3j.codegen.SolidityFunctionWrapperGenerator in the 
- * <a href="https://github.com/LFDT-web3j/web3j/tree/main/codegen">codegen module</a> to update.
- *
- * <p>Generated with web3j version 1.8.0.
- */
 @SuppressWarnings("rawtypes")
 @Generated("org.web3j.codegen.SolidityFunctionWrapperGenerator")
 public class EscrowRecord extends Contract {
@@ -61,29 +52,29 @@ public class EscrowRecord extends Contract {
 
     public static final String FUNC_RELEASE = "release";
 
-    public static final Event STATECHANGED_EVENT = new Event("StateChanged", 
+    public static final Event STATECHANGED_EVENT = new Event("StateChanged",
             Arrays.<TypeReference<?>>asList(new TypeReference<Uint8>() {}, new TypeReference<Uint256>() {}));
     ;
 
     @Deprecated
     protected EscrowRecord(String contractAddress, Web3j web3j, Credentials credentials,
-            BigInteger gasPrice, BigInteger gasLimit) {
+                           BigInteger gasPrice, BigInteger gasLimit) {
         super(BINARY, contractAddress, web3j, credentials, gasPrice, gasLimit);
     }
 
     protected EscrowRecord(String contractAddress, Web3j web3j, Credentials credentials,
-            ContractGasProvider contractGasProvider) {
+                           ContractGasProvider contractGasProvider) {
         super(BINARY, contractAddress, web3j, credentials, contractGasProvider);
     }
 
     @Deprecated
     protected EscrowRecord(String contractAddress, Web3j web3j,
-            TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
+                           TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
         super(BINARY, contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
     protected EscrowRecord(String contractAddress, Web3j web3j,
-            TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
+                           TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
         super(BINARY, contractAddress, web3j, transactionManager, contractGasProvider);
     }
 
@@ -122,121 +113,125 @@ public class EscrowRecord extends Contract {
     }
 
     public RemoteFunctionCall<BigInteger> amount() {
-        final Function function = new Function(FUNC_AMOUNT, 
-                Arrays.<Type>asList(), 
+        final Function function = new Function(FUNC_AMOUNT,
+                Arrays.<Type>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
     public RemoteFunctionCall<String> backendSigner() {
-        final Function function = new Function(FUNC_BACKENDSIGNER, 
-                Arrays.<Type>asList(), 
+        final Function function = new Function(FUNC_BACKENDSIGNER,
+                Arrays.<Type>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
         return executeRemoteCallSingleValueReturn(function, String.class);
     }
 
     public RemoteFunctionCall<BigInteger> currentState() {
-        final Function function = new Function(FUNC_CURRENTSTATE, 
-                Arrays.<Type>asList(), 
+        final Function function = new Function(FUNC_CURRENTSTATE,
+                Arrays.<Type>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint8>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
     public RemoteFunctionCall<TransactionReceipt> dispute() {
         final Function function = new Function(
-                FUNC_DISPUTE, 
-                Arrays.<Type>asList(), 
+                FUNC_DISPUTE,
+                Arrays.<Type>asList(),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<TransactionReceipt> fund() {
         final Function function = new Function(
-                FUNC_FUND, 
-                Arrays.<Type>asList(), 
+                FUNC_FUND,
+                Arrays.<Type>asList(),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<BigInteger> gigId() {
-        final Function function = new Function(FUNC_GIGID, 
-                Arrays.<Type>asList(), 
+        final Function function = new Function(FUNC_GIGID,
+                Arrays.<Type>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
     public RemoteFunctionCall<TransactionReceipt> refund() {
         final Function function = new Function(
-                FUNC_REFUND, 
-                Arrays.<Type>asList(), 
+                FUNC_REFUND,
+                Arrays.<Type>asList(),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> release() {
+    public RemoteFunctionCall<TransactionReceipt> release(BigInteger _winnerCents, BigInteger _platformRevenueCents, BigInteger _stipendPoolCents) {
         final Function function = new Function(
-                FUNC_RELEASE, 
-                Arrays.<Type>asList(), 
+                FUNC_RELEASE,
+                Arrays.<Type>asList(
+                        new org.web3j.abi.datatypes.generated.Uint256(_winnerCents),
+                        new org.web3j.abi.datatypes.generated.Uint256(_platformRevenueCents),
+                        new org.web3j.abi.datatypes.generated.Uint256(_stipendPoolCents)
+                ),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
     @Deprecated
     public static EscrowRecord load(String contractAddress, Web3j web3j, Credentials credentials,
-            BigInteger gasPrice, BigInteger gasLimit) {
+                                    BigInteger gasPrice, BigInteger gasLimit) {
         return new EscrowRecord(contractAddress, web3j, credentials, gasPrice, gasLimit);
     }
 
     @Deprecated
     public static EscrowRecord load(String contractAddress, Web3j web3j,
-            TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
+                                    TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
         return new EscrowRecord(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
     public static EscrowRecord load(String contractAddress, Web3j web3j, Credentials credentials,
-            ContractGasProvider contractGasProvider) {
+                                    ContractGasProvider contractGasProvider) {
         return new EscrowRecord(contractAddress, web3j, credentials, contractGasProvider);
     }
 
     public static EscrowRecord load(String contractAddress, Web3j web3j,
-            TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
+                                    TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
         return new EscrowRecord(contractAddress, web3j, transactionManager, contractGasProvider);
     }
 
     public static RemoteCall<EscrowRecord> deploy(Web3j web3j, Credentials credentials,
-            ContractGasProvider contractGasProvider, String _backendSigner, BigInteger _gigId,
-            BigInteger _amount) {
-        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _backendSigner), 
-                new org.web3j.abi.datatypes.generated.Uint256(_gigId), 
+                                                  ContractGasProvider contractGasProvider, String _backendSigner, BigInteger _gigId,
+                                                  BigInteger _amount) {
+        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _backendSigner),
+                new org.web3j.abi.datatypes.generated.Uint256(_gigId),
                 new org.web3j.abi.datatypes.generated.Uint256(_amount)));
         return deployRemoteCall(EscrowRecord.class, web3j, credentials, contractGasProvider, getDeploymentBinary(), encodedConstructor);
     }
 
     public static RemoteCall<EscrowRecord> deploy(Web3j web3j,
-            TransactionManager transactionManager, ContractGasProvider contractGasProvider,
-            String _backendSigner, BigInteger _gigId, BigInteger _amount) {
-        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _backendSigner), 
-                new org.web3j.abi.datatypes.generated.Uint256(_gigId), 
+                                                  TransactionManager transactionManager, ContractGasProvider contractGasProvider,
+                                                  String _backendSigner, BigInteger _gigId, BigInteger _amount) {
+        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _backendSigner),
+                new org.web3j.abi.datatypes.generated.Uint256(_gigId),
                 new org.web3j.abi.datatypes.generated.Uint256(_amount)));
         return deployRemoteCall(EscrowRecord.class, web3j, transactionManager, contractGasProvider, getDeploymentBinary(), encodedConstructor);
     }
 
     @Deprecated
     public static RemoteCall<EscrowRecord> deploy(Web3j web3j, Credentials credentials,
-            BigInteger gasPrice, BigInteger gasLimit, String _backendSigner, BigInteger _gigId,
-            BigInteger _amount) {
-        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _backendSigner), 
-                new org.web3j.abi.datatypes.generated.Uint256(_gigId), 
+                                                  BigInteger gasPrice, BigInteger gasLimit, String _backendSigner, BigInteger _gigId,
+                                                  BigInteger _amount) {
+        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _backendSigner),
+                new org.web3j.abi.datatypes.generated.Uint256(_gigId),
                 new org.web3j.abi.datatypes.generated.Uint256(_amount)));
         return deployRemoteCall(EscrowRecord.class, web3j, credentials, gasPrice, gasLimit, getDeploymentBinary(), encodedConstructor);
     }
 
     @Deprecated
     public static RemoteCall<EscrowRecord> deploy(Web3j web3j,
-            TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit,
-            String _backendSigner, BigInteger _gigId, BigInteger _amount) {
-        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _backendSigner), 
-                new org.web3j.abi.datatypes.generated.Uint256(_gigId), 
+                                                  TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit,
+                                                  String _backendSigner, BigInteger _gigId, BigInteger _amount) {
+        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _backendSigner),
+                new org.web3j.abi.datatypes.generated.Uint256(_gigId),
                 new org.web3j.abi.datatypes.generated.Uint256(_amount)));
         return deployRemoteCall(EscrowRecord.class, web3j, transactionManager, gasPrice, gasLimit, getDeploymentBinary(), encodedConstructor);
     }

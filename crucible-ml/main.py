@@ -1,7 +1,7 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 import joblib
 import numpy as np
 import pandas as pd
@@ -10,7 +10,6 @@ from google import genai
 from google.genai import types
 import json
 import os
-import shutil
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -25,86 +24,69 @@ class LimitUploadSize(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         if request.method == "POST" and request.url.path == "/evaluate-model":
-            if "content-length" not in request.headers:
-                return Response(status_code=411, content="Content-Length header required")
-
-            content_length = int(request.headers["content-length"])
-            if content_length > self.max_upload_size:
-                return Response(status_code=413, content="Payload Too Large. Max size is 500MB.")
-
+            if "content-length" in request.headers:
+                content_length = int(request.headers["content-length"])
+                if content_length > self.max_upload_size:
+                    return Response(status_code=413, content="Payload Too Large. Max size is 500MB.")
         return await call_next(request)
 
 # Limit uploads to 500 MB (500 * 1024 * 1024 bytes)
 app.add_middleware(LimitUploadSize, max_upload_size=524288000)
 
-
 DATASETS_DIR = os.getenv("DATASETS_DIR", os.path.join(os.path.dirname(__file__), "datasets"))
 os.makedirs(DATASETS_DIR, exist_ok=True)
 
-# --- Phase 3: ML Pricing Advisory ---
-budget_model_path = os.getenv("BUDGET_MODEL_PATH", "budget_model.pkl")
-model = joblib.load(budget_model_path) if os.path.exists(budget_model_path) else None
-
-class GigFeatures(BaseModel):
-    description_length: int
-    estimated_hours: float
-    complexity_score: int
-
-@app.post("/predict-budget")
-def predict_budget(features: GigFeatures):
-    if not model:
-        raise HTTPException(status_code=503, detail="Budget model not initialized")
-    input_data = np.array([[features.description_length, features.estimated_hours, features.complexity_score]])
-    prediction = model.predict(input_data)[0]
-    return {"recommended_budget": round(float(prediction), 2), "currency": "USD"}
-
 
 # --- Phase 3: Kaggle-Style Evaluation Engine ---
+class EvaluationRequest(BaseModel):
+    model_path: str
+    dataset_id: str
+    task_type: Optional[str] = "regression"
+    target_column: Optional[str] = "target"
+
 @app.post("/evaluate-model")
-async def evaluate_model(
-        gig_id: str = Form(...),
-        task_type: str = Form(...), # "regression" or "classification"
-        target_column: str = Form(...),
-        file: UploadFile = File(...)
-):
-    ground_truth_path = os.path.join(DATASETS_DIR, f"{gig_id}_test.csv")
+async def evaluate_model(request: EvaluationRequest):
+    ground_truth_path = os.path.join(DATASETS_DIR, f"{request.dataset_id}_test.csv")
     if not os.path.exists(ground_truth_path):
         raise HTTPException(
             status_code=404,
-            detail=f"Held-out dataset for gig '{gig_id}' not found at {ground_truth_path}"
+            detail=f"Held-out dataset '{request.dataset_id}' not found at {ground_truth_path}"
         )
 
-    temp_model_path = f"temp_{file.filename}"
-    try:
-        with open(temp_model_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+    if not os.path.exists(request.model_path):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Submitted model not found at {request.model_path}"
+        )
 
-        submitted_model = joblib.load(temp_model_path)
+    try:
+        # Load the model directly from the filepath provided by the Spring Boot backend
+        submitted_model = joblib.load(request.model_path)
         df_test = pd.read_csv(ground_truth_path)
 
-        if target_column not in df_test.columns:
-            raise HTTPException(status_code=400, detail=f"Target column '{target_column}' missing in ground truth")
+        # Dynamic fallback: Use specified column, or default to the last column in the CSV
+        target = request.target_column if request.target_column in df_test.columns else df_test.columns[-1]
 
-        X_test = df_test.drop(columns=[target_column])
-        y_test = df_test[target_column]
+        X_test = df_test.drop(columns=[target])
+        y_test = df_test[target]
 
         y_pred = submitted_model.predict(X_test)
 
-        if task_type == "regression":
+        if request.task_type == "regression":
             rmse = float(np.sqrt(mean_squared_error(y_test, y_pred)))
             r2 = float(r2_score(y_test, y_pred))
             score = max(0.0, min(100.0, r2 * 100)) # Score mapped to 0 - 100
             return {
-                "gig_id": gig_id,
+                "gig_id": request.dataset_id,
                 "score": round(score, 2),
                 "primary_metric": "R2",
                 "details": {"r2_score": round(r2, 4), "rmse": round(rmse, 4)}
             }
-        elif task_type == "classification":
+        elif request.task_type == "classification":
             acc = float(accuracy_score(y_test, y_pred))
             f1 = float(f1_score(y_test, y_pred, average="weighted"))
             return {
-                "gig_id": gig_id,
+                "gig_id": request.dataset_id,
                 "score": round(acc * 100, 2),
                 "primary_metric": "Accuracy",
                 "details": {"accuracy": round(acc, 4), "f1_score": round(f1, 4)}
@@ -114,9 +96,6 @@ async def evaluate_model(
 
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Model evaluation failed: {str(e)}")
-    finally:
-        if os.path.exists(temp_model_path):
-            os.remove(temp_model_path)
 
 
 # --- Phase 5: Gemini LLM Breakdown Assistant ---

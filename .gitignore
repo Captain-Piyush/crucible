@@ -1,5 +1,12 @@
+# =========================
+# IDE & OS
+# =========================
 .idea/
-# Node & Hardhat dependencies
+.DS_Store
+
+# =========================
+# NODE & HARDHAT (SMART CONTRACTS)
+# =========================
 node_modules/
 cache/
 artifacts/
@@ -7,7 +14,37 @@ ignition/deployments/
 typechain-types/
 coverage/
 coverage.json
-.env
 
+# =========================
+# SPRING BOOT (JAVA)
+# =========================
+crucible-backend/target/
+crucible-backend/bin/
+crucible-backend/build/
+crucible-backend/.mvn/
+*.class
+*.jar
+*.war
 crucible-backend/web3j.zip
-application-local.properties
+
+# =========================
+# FASTAPI (PYTHON)
+# =========================
+crucible-ml/__pycache__/
+crucible-ml/venv/
+crucible-ml/.venv/
+crucible-ml/*.pyc
+crucible-ml/datasets/
+*.egg-info/
+
+# =========================
+# SECRETS & LOCAL CONFIGS (CRITICAL)
+# =========================
+.env
+.env.local
+*.pem
+*.key
+secrets.json
+*application-local.properties
+*application-secret.properties
+# Note: application.properties IS tracked so the app can boot

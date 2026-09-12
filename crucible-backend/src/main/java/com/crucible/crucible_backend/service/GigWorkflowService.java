@@ -84,14 +84,15 @@ public class GigWorkflowService {
         int numberOfRunnersUp = (runnerUpSubmissionIds != null) ? runnerUpSubmissionIds.size() : 0;
         BigDecimal totalBudget = gig.getTotalBudget() != null ? gig.getTotalBudget() : BigDecimal.ZERO;
 
-        // 3. Trigger Blockchain Payout (The Oracle Bridge)
+        // 3. Compute the final payout ledger FIRST
+        StipendCalculationService.FinancialLedger ledger = stipendCalculationService.calculatePayouts(totalBudget, numberOfRunnersUp);
+
+        // 4. Trigger Blockchain Audit Trail with exact stipend splits
         if (gig.getEscrowContractAddress() != null) {
             System.out.println("Executing on-chain settlement for Gig ID: " + gigId + " at contract: " + gig.getEscrowContractAddress());
-            // This assumes your EscrowService has a releaseEscrow(address) method mapped to your Smart Contract
-            escrowService.releaseEscrow(gig.getEscrowContractAddress());
+            escrowService.releaseEscrow(gig.getEscrowContractAddress(), ledger);
         }
 
-        // 4. Compute and return the final payout ledger
-        return stipendCalculationService.calculatePayouts(totalBudget, numberOfRunnersUp);
+        return ledger;
     }
 }

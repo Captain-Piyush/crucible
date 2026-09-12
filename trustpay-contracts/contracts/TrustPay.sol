@@ -12,9 +12,15 @@ contract EscrowRecord {
     State public currentState;
     address public backendSigner;
     uint256 public gigId;
-    uint256 public amount; // Represents fiat value for audit purposes
+    uint256 public amount; // Represents total fiat value for audit purposes
+
+    // --- Audit Trail Ledgers ---
+    uint256 public finalWinnerPayout;
+    uint256 public finalPlatformRevenue;
+    uint256 public finalStipendPool;
 
     event StateChanged(State newState, uint256 timestamp);
+    event PayoutRecorded(uint256 winnerCents, uint256 platformRevenueCents, uint256 stipendPoolCents);
 
     modifier onlyBackend() {
         require(msg.sender == backendSigner, "Only backend can update state");
@@ -34,10 +40,19 @@ contract EscrowRecord {
         emit StateChanged(currentState, block.timestamp);
     }
 
-    function release() external onlyBackend {
+    // Now accepts the exact splits to secure the audit trail
+    function release(uint256 _winnerCents, uint256 _platformRevenueCents, uint256 _stipendPoolCents) external onlyBackend {
         require(currentState == State.Funded, "Invalid state transition");
+
+        // Permanently write the financial breakdown to the blockchain state
+        finalWinnerPayout = _winnerCents;
+        finalPlatformRevenue = _platformRevenueCents;
+        finalStipendPool = _stipendPoolCents;
+
         currentState = State.Released;
+
         emit StateChanged(currentState, block.timestamp);
+        emit PayoutRecorded(_winnerCents, _platformRevenueCents, _stipendPoolCents);
     }
 
     function refund() external onlyBackend {
@@ -64,8 +79,6 @@ contract EscrowFactory {
     event EscrowCreated(uint256 indexed gigId, address escrowAddress);
 
     constructor() {
-        // The wallet that deploys this contract (your Spring Boot backend wallet)
-        // becomes the authorized signer.
         backendSigner = msg.sender;
     }
 
@@ -73,7 +86,6 @@ contract EscrowFactory {
         require(msg.sender == backendSigner, "Only backend can create escrows");
         require(gigEscrows[gigId] == address(0), "Escrow already exists for this gig");
 
-        // Deploy a new independent EscrowRecord contract
         EscrowRecord newEscrow = new EscrowRecord(backendSigner, gigId, amount);
         gigEscrows[gigId] = address(newEscrow);
 

@@ -29,9 +29,12 @@ public class Project {
     private User poster;
 
     // One project contains Many gigs.
-    // cascade = CascadeType.ALL means if we save a Project, it automatically saves its Gigs too.
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Gig> gigs = new ArrayList<>();
+
+    // Maps the AI breakdowns directly to the parent project
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectModule> modules = new ArrayList<>();
 
     // --- Constructors ---
     public Project() {}
@@ -54,6 +57,16 @@ public class Project {
     public void setTotalBudget(BigDecimal totalBudget) { this.totalBudget = totalBudget; }
     public User getPoster() { return poster; }
     public void setPoster(User poster) { this.poster = poster; }
+
     public List<Gig> getGigs() { return gigs; }
     public void setGigs(List<Gig> gigs) { this.gigs = gigs; }
+
+    public List<ProjectModule> getModules() { return modules; }
+    public void setModules(List<ProjectModule> modules) { this.modules = modules; }
+
+    // Helper method to keep JPA relationships synchronized
+    public void addModule(ProjectModule module) {
+        modules.add(module);
+        module.setProject(this);
+    }
 }
